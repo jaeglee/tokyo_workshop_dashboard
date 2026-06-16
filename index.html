@@ -7,6 +7,7 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="config.js"></script>
   <style>
     :root { --right-bg: #f3f3f3; }
     html, body { height: 100%; margin: 0; }
@@ -172,7 +173,7 @@
 
   <script>
     // ── Map ──────────────────────────────────────────────────────────
-    mapboxgl.accessToken = 'TOKEN'; // replace with your Mapbox public token
+    mapboxgl.accessToken = 'pk.eyJ1IjoiamFlZ2xlZSIsImEiOiJjbWU5eWJja3Ewdm12Mm1wcmp2M2Y0MXN2In0.fL8YFWQZqsmeS2coJtnGZw';
 
     const map = new mapboxgl.Map({
       container: 'map',
