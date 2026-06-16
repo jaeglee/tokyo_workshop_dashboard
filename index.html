@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Carbon Neutrality Pathway in Nihonbashi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root { --right-bg: #f3f3f3; }
+    html, body { height: 100%; margin: 0; }
+    .split { display: flex; height: 100vh; width: 100vw; }
+    .left  { position: relative; flex: 0 0 50%; min-width: 320px; overflow: hidden; background: #ddd; }
+    .right { flex: 1 1 50%; min-width: 320px; background: var(--right-bg); display: flex; flex-direction: column; overflow: hidden; }
+    #map { position: absolute; inset: 0; }
+
+    /* Title box */
+    .title-box {
+      position: absolute; top: 10px; left: 10px;
+      background: rgba(0,0,0,0.6); color: #fff;
+      padding: 12px 16px; border-radius: 8px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      max-width: 460px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .title-box h1 { font-size: 22px; margin: 0 0 4px; font-weight: 700; }
+    .title-box p  { margin: 2px 0; font-size: 13px; line-height: 1.3; }
+
+    /* Legend */
+    .legend {
+      position: absolute;
+      top: 140px; left: 10px;
+      background: rgba(255,255,255,0.9);
+      padding: 9px 9px;
+      border-radius: 6px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size: 14px; line-height: 1.3; font-weight: 500;
+      box-shadow: 0 1px 2px rgba(0,0,0,.25);
+    }
+    .legend strong { font-size: 15px; font-weight: 700; display: block; margin-bottom: 6px; }
+    .legend div    { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+    .legend span   { width: 16px; height: 16px; border-radius: 3px; display: inline-block; }
+
+    /* Layer toggle panel */
+    .toggle-panel {
+      position: absolute;
+      bottom: 40px; left: 10px;
+      background: rgba(255,255,255,0.92);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size: 13px; font-weight: 500;
+      box-shadow: 0 1px 2px rgba(0,0,0,.25);
+      display: flex; flex-direction: column; gap: 7px;
+    }
+    .toggle-panel strong { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+    .toggle-panel label  { display: flex; align-items: center; gap: 7px; cursor: pointer; }
+    .toggle-panel input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #333; }
+
+    /* Compass */
+    .mapboxgl-ctrl-compass {
+      width: 50px !important; height: 50px !important;
+      min-width: 50px !important; min-height: 50px !important;
+      max-width: 50px !important; max-height: 50px !important;
+      background: #999 !important; border: 2px solid #000 !important; border-radius: 50% !important;
+    }
+    .mapboxgl-ctrl-compass svg { width: 30px !important; height: 30px !important; stroke: #000 !important; stroke-width: 1.5px; }
+
+    /* Scale bar */
+    .mapboxgl-ctrl-scale {
+      font-size: 14px !important; font-family: "Times New Roman", serif; font-weight: bold;
+      background: #888; color: #333; border: 1px solid #000;
+      padding: 2px 8px; border-radius: 0; box-shadow: none;
+    }
+
+    /* ── Right panel ── */
+    .panel-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid #d0d0d0;
+      background: #fff;
+      flex-shrink: 0;
+      font-family: Calibri, "Segoe UI", Arial, sans-serif;
+    }
+    .building-select { display: flex; align-items: center; gap: 10px; }
+    .building-select label { font-size: 13px; font-weight: 600; white-space: nowrap; color: #404040; }
+    .building-select select {
+      flex: 1; min-width: 0;
+      font-family: Calibri, Arial, sans-serif; font-size: 13px;
+      padding: 5px 8px; border: 1px solid #aaa; border-radius: 2px;
+    }
+    .panel-hint { font-size: 11px; color: #888; margin-top: 5px; }
+
+    .panel-body { padding: 12px; overflow-y: auto; flex: 1 1 auto; }
+
+    /* Charts */
+    .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .chart-card { background: #fff; border: 1px solid #ccc; padding: 10px; }
+    .chart-card-inner { border: 1px solid #d0d0d0; padding: 8px; }
+    .chart-box { position: relative; height: 210px; }
+    .chart-meta { font-size: 11px; color: #666; margin-top: 7px; padding-top: 7px; border-top: 1px solid #eee; }
+    .muted { color: #777; }
+  </style>
+</head>
+<body>
+  <div class="split">
+
+    <!-- LEFT: Map -->
+    <div class="left">
+      <div id="map"></div>
+
+      <!-- Title -->
+      <div class="title-box">
+        <h1>Carbon Neutrality Pathway in Nihonbashi</h1>
+        <p>Georgia Institute of Technology</p>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend">
+        <strong>TODO: Legend</strong>
+        <div><span style="background:#16d4e0"></span> Buildings</div>
+      </div>
+
+      <!-- Layer toggles -->
+      <div class="toggle-panel">
+        <strong>Layers</strong>
+        <label><input type="checkbox" id="tog-boundary"      checked> Boundary</label>
+        <label><input type="checkbox" id="tog-buildings"     checked> Buildings (3D)</label>
+        <label><input type="checkbox" id="tog-boundary-sub"         > Boundary (sub)</label>
+        <label><input type="checkbox" id="tog-buildings-sub"        > Buildings (sub)</label>
+      </div>
+    </div>
+
+    <!-- RIGHT: Charts -->
+    <div class="right">
+      <div class="panel-header">
+        <div class="building-select">
+          <label for="buildingSelect">Building:</label>
+          <select id="buildingSelect"></select>
+        </div>
+        <div class="panel-hint">Or click a building on the map (enable Buildings sub layer first).</div>
+      </div>
+      <div class="panel-body">
+        <div class="chart-grid">
+          <div class="chart-card">
+            <div class="chart-card-inner">
+              <div class="chart-box"><canvas id="energyChart"></canvas></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-inner">
+              <div class="chart-box"><canvas id="carbonChart"></canvas></div>
+            </div>
+            <div class="chart-meta" id="carbonMeta"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-inner">
+              <div class="chart-box"><canvas id="billChart"></canvas></div>
+            </div>
+            <div class="chart-meta" id="billMeta"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-inner">
+              <div class="chart-box"><canvas id="lifecycleChart"></canvas></div>
+            </div>
+            <div class="chart-meta" id="lifecycleMeta"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Map ──────────────────────────────────────────────────────────
+    //mapboxgl.accessToken = window.MAPBOX_TOKEN; // set in config.js (not committed)
+    mapboxgl.accessToken = 'pk.eyJ1IjoiamFlZ2xlZSIsImEiOiJjbWU5eWJja3Ewdm12Mm1wcmp2M2Y0MXN2In0.fL8YFWQZqsmeS2coJtnGZw'
+
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/dark-v11',
+      center: [139.778928, 35.687202],
+      zoom: 17,
+      bearing: 300,
+      pitch: 55,
+      minZoom: 7
+    });
+
+    const LAYER_ID = '09cee41d9612a6fd8568'; // main buildings (3D)
+    const popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: [0, -8] });
+
+    map.on('load', () => {
+
+      // 1. Boundary
+      map.addSource('boundary', { type: 'vector', url: 'mapbox://jaeglee.3thv8vk0pfof' });
+      map.addLayer({
+        id: 'boundary', type: 'fill', source: 'boundary',
+        'source-layer': '15fbcd21cba2f138becb',
+        paint: { 'fill-color': 'hsl(10, 28%, 23%)', 'fill-opacity': 0.8, 'fill-outline-color': 'hsl(10, 78%, 46.9%)' }
+      });
+
+      // 2. Boundary sub (hidden)
+      map.addSource('boundary-sub', { type: 'vector', url: 'mapbox://jaeglee.sap8u2o289st' });
+      map.addLayer({
+        id: 'boundary-sub', type: 'fill', source: 'boundary-sub',
+        'source-layer': 'c5e27a2f7f7994fd5dd1',
+        layout: { 'visibility': 'none' },
+        paint: { 'fill-color': 'hsl(10, 28%, 23%)', 'fill-opacity': 0.8, 'fill-outline-color': 'hsl(10, 78%, 46.9%)' }
+      });
+
+      // 3. Buildings sub (hidden) — clickable for charts
+      map.addSource('buildings-sub', { type: 'vector', url: 'mapbox://jaeglee.9543n6dil8k4' });
+      map.addLayer({
+        id: 'buildings-sub', type: 'fill-extrusion', source: 'buildings-sub',
+        'source-layer': '49250a77d1ee234afb5b',
+        layout: { 'visibility': 'none' },
+        paint: {
+          'fill-extrusion-height': ['get', 'height'],
+          'fill-extrusion-opacity': 0.9,
+          'fill-extrusion-color': 'hsl(183, 82%, 55%)'
+        }
+      });
+
+      // 4. Buildings main (3D)
+      map.addSource('buildings', { type: 'vector', url: 'mapbox://jaeglee.o7iwsnef0l65' });
+      map.addLayer({
+        id: LAYER_ID, type: 'fill-extrusion', source: 'buildings',
+        'source-layer': '09cee41d9612a6fd8568',
+        paint: {
+          'fill-extrusion-height': ['get', 'height'],
+          'fill-extrusion-opacity': 0.9,
+          'fill-extrusion-color': 'hsl(183, 82%, 55%)'
+        }
+      });
+
+      // Layer toggles
+      [
+        { id: 'tog-boundary',      layer: 'boundary'       },
+        { id: 'tog-buildings',     layer: LAYER_ID         },
+        { id: 'tog-boundary-sub',  layer: 'boundary-sub'   },
+        { id: 'tog-buildings-sub', layer: 'buildings-sub'  },
+      ].forEach(({ id, layer }) => {
+        document.getElementById(id).addEventListener('change', function () {
+          map.setLayoutProperty(layer, 'visibility', this.checked ? 'visible' : 'none');
+        });
+      });
+
+      // Hover on buildings-sub
+      map.on('mouseenter', 'buildings-sub', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mousemove',  'buildings-sub', (e) => {
+        if (!e.features?.length) return;
+        const p = e.features[0].properties || {};
+        const bid = p.id ?? p.fid ?? p.building_id ?? '—';
+        popup.setLngLat(e.lngLat)
+          .setHTML(`<div style="font:12px/1.5 system-ui;"><strong>Building ${bid}</strong><br>Height: ${p.height ?? '—'} m</div>`)
+          .addTo(map);
+      });
+      map.on('mouseleave', 'buildings-sub', () => { map.getCanvas().style.cursor = ''; popup.remove(); });
+
+      // Click buildings-sub → render charts
+      map.on('click', 'buildings-sub', (e) => {
+        const p = e.features?.[0]?.properties || {};
+        const bid = String(p.id ?? p.fid ?? p.building_id ?? '');
+        if (!bid) return;
+        const idx = buildings.findIndex(b => b.id === bid);
+        if (idx === -1) { console.warn('No chart data for building', bid); return; }
+        document.getElementById('buildingSelect').value = idx;
+        renderCharts(buildings[idx]);
+      });
+
+      // Hover on main buildings layer (popup only)
+      map.on('mouseenter', LAYER_ID, () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mousemove',  LAYER_ID, (e) => {
+        if (!e.features?.length) return;
+        const p = e.features[0].properties || {};
+        popup.setLngLat(e.lngLat)
+          .setHTML(`<div style="font:12px/1.5 system-ui;"><strong>${p.building_id ?? p.id ?? '—'}</strong><br>Height: ${p.height ?? '—'} m</div>`)
+          .addTo(map);
+      });
+      map.on('mouseleave', LAYER_ID, () => { map.getCanvas().style.cursor = ''; popup.remove(); });
+    });
+
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: false }), 'top-left');
+    map.addControl(new mapboxgl.ScaleControl({ maxWidth: 200, unit: 'metric' }), 'top-left');
+
+
+    // ── Building data ─────────────────────────────────────────────────
+    const buildings = [
+      {"id":"2070","use":"Office","gfa":410.5,"tier":"Maintenance","energyPerGFA":20497.9,"renewableEnergyPerGFA":8199.1,"carbonWithDER":3.19,"carbonWithoutDER":4.83,"energyBillWithDER":16659,"energyBillWithoutDER":29262,"lifecycleCostWithDER":5789591,"lifecycleCostWithoutDER":7866536},
+      {"id":"3037","use":"Office","gfa":3552.2,"tier":"Reconstruct","energyPerGFA":177361.1,"renewableEnergyPerGFA":70944.4,"carbonWithDER":27.64,"carbonWithoutDER":41.81,"energyBillWithDER":144142,"energyBillWithoutDER":253193,"lifecycleCostWithDER":50095357,"lifecycleCostWithoutDER":68066454},
+      {"id":"3044","use":"Office","gfa":528.8,"tier":"Maintenance","energyPerGFA":26403.4,"renewableEnergyPerGFA":10561.4,"carbonWithDER":4.12,"carbonWithoutDER":6.22,"energyBillWithDER":21458,"energyBillWithoutDER":37692,"lifecycleCostWithDER":7457594,"lifecycleCostWithoutDER":10132915},
+      {"id":"3067","use":"Office","gfa":51.0,"tier":"Renovate","energyPerGFA":2546.3,"renewableEnergyPerGFA":1018.5,"carbonWithDER":0.4,"carbonWithoutDER":0.6,"energyBillWithDER":2069,"energyBillWithoutDER":3635,"lifecycleCostWithDER":719196,"lifecycleCostWithoutDER":977198},
+      {"id":"3074","use":"Residence & Commercial Mixed","gfa":583.7,"tier":"Renovate","energyPerGFA":29143.0,"renewableEnergyPerGFA":11657.2,"carbonWithDER":4.54,"carbonWithoutDER":6.87,"energyBillWithDER":23685,"energyBillWithoutDER":41603,"lifecycleCostWithDER":8231391,"lifecycleCostWithoutDER":11184302},
+      {"id":"3078","use":"Office","gfa":636.0,"tier":"Reconstruct","energyPerGFA":31757.2,"renewableEnergyPerGFA":12702.9,"carbonWithDER":4.95,"carbonWithoutDER":7.49,"energyBillWithDER":25809,"energyBillWithoutDER":45335,"lifecycleCostWithDER":8969782,"lifecycleCostWithoutDER":12187582},
+      {"id":"3486","use":"Apartment","gfa":469.3,"tier":"Maintenance","energyPerGFA":23429.7,"renewableEnergyPerGFA":9371.9,"carbonWithDER":3.65,"carbonWithoutDER":5.52,"energyBillWithDER":19041,"energyBillWithoutDER":33447,"lifecycleCostWithDER":6617692,"lifecycleCostWithoutDER":8991708},
+      {"id":"3550","use":"Office","gfa":875.4,"tier":"Reconstruct","energyPerGFA":43707.8,"renewableEnergyPerGFA":17483.1,"carbonWithDER":6.81,"carbonWithoutDER":10.3,"energyBillWithDER":35521,"energyBillWithoutDER":62395,"lifecycleCostWithDER":12345207,"lifecycleCostWithoutDER":16773900},
+      {"id":"3552","use":"Residence & Commercial Mixed","gfa":109.3,"tier":"Maintenance","energyPerGFA":5458.1,"renewableEnergyPerGFA":2183.2,"carbonWithDER":0.85,"carbonWithoutDER":1.29,"energyBillWithDER":4436,"energyBillWithoutDER":7792,"lifecycleCostWithDER":1541636,"lifecycleCostWithoutDER":2094680},
+      {"id":"3554","use":"Office","gfa":2148.7,"tier":"Renovate","energyPerGFA":107281.1,"renewableEnergyPerGFA":42912.4,"carbonWithDER":16.72,"carbonWithoutDER":25.29,"energyBillWithDER":87188,"energyBillWithoutDER":153150,"lifecycleCostWithDER":30301372,"lifecycleCostWithoutDER":41171620},
+      {"id":"3562","use":"Office","gfa":1778.1,"tier":"Renovate","energyPerGFA":88781.6,"renewableEnergyPerGFA":35512.6,"carbonWithDER":13.84,"carbonWithoutDER":20.93,"energyBillWithDER":72153,"energyBillWithoutDER":126741,"lifecycleCostWithDER":25076214,"lifecycleCostWithoutDER":34071999},
+      {"id":"4050","use":"Office","gfa":6231.0,"tier":"Renovate","energyPerGFA":311112.1,"renewableEnergyPerGFA":124444.9,"carbonWithDER":48.49,"carbonWithoutDER":73.35,"energyBillWithDER":252842,"energyBillWithoutDER":444130,"lifecycleCostWithDER":87873109,"lifecycleCostWithoutDER":119396514},
+      {"id":"4062","use":"Office","gfa":1063.0,"tier":"Renovate","energyPerGFA":53072.8,"renewableEnergyPerGFA":21229.1,"carbonWithDER":8.27,"carbonWithoutDER":12.51,"energyBillWithDER":43132,"energyBillWithoutDER":75764,"lifecycleCostWithDER":14990314,"lifecycleCostWithoutDER":20367906},
+      {"id":"4560","use":"Residence & Commercial Mixed","gfa":194.3,"tier":"Maintenance","energyPerGFA":9700.6,"renewableEnergyPerGFA":3880.2,"carbonWithDER":1.51,"carbonWithoutDER":2.29,"energyBillWithDER":7884,"energyBillWithoutDER":13848,"lifecycleCostWithDER":2739922,"lifecycleCostWithoutDER":3722835},
+      {"id":"4562","use":"Office","gfa":333.4,"tier":"Renovate","energyPerGFA":16648.4,"renewableEnergyPerGFA":6659.4,"carbonWithDER":2.59,"carbonWithoutDER":3.92,"energyBillWithDER":13530,"energyBillWithoutDER":23767,"lifecycleCostWithDER":4702318,"lifecycleCostWithoutDER":6389217},
+      {"id":"4569","use":"Office","gfa":850.3,"tier":"Renovate","energyPerGFA":42453.5,"renewableEnergyPerGFA":16981.4,"carbonWithDER":6.62,"carbonWithoutDER":10.01,"energyBillWithDER":34502,"energyBillWithoutDER":60605,"lifecycleCostWithDER":11990926,"lifecycleCostWithoutDER":16292524},
+      {"id":"4571","use":"Office","gfa":1081.3,"tier":"Renovate","energyPerGFA":53989.6,"renewableEnergyPerGFA":21595.9,"carbonWithDER":8.41,"carbonWithoutDER":12.73,"energyBillWithDER":43878,"energyBillWithoutDER":77073,"lifecycleCostWithDER":15249284,"lifecycleCostWithoutDER":20719779}
+    ];
+
+    // ── Dropdown ──────────────────────────────────────────────────────
+    const select = document.getElementById('buildingSelect');
+    buildings.forEach((b, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `${b.id} — ${b.use} (${b.tier}, ${b.gfa.toLocaleString()} m²)`;
+      select.appendChild(opt);
+    });
+    select.addEventListener('change', () => renderCharts(buildings[select.value]));
+
+    // ── Chart rendering ───────────────────────────────────────────────
+    const BLUE = '#4472C4';
+    const GRID = '#D9D9D9';
+    Chart.defaults.font.family = "Calibri, Arial, sans-serif";
+    Chart.defaults.color = '#404040';
+
+    let energyChart, carbonChart, billChart, lifecycleChart;
+
+    function valueLabelPlugin(fmt) {
+      return {
+        id: 'valueLabels',
+        afterDatasetsDraw(chart) {
+          const { ctx } = chart;
+          chart.data.datasets.forEach((ds, di) => {
+            chart.getDatasetMeta(di).data.forEach((el, i) => {
+              const label = fmt(ds.data[i]);
+              ctx.save();
+              ctx.font = '11px Calibri, Arial, sans-serif';
+              ctx.fillStyle = '#000';
+              if (chart.options.indexAxis === 'y') {
+                ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                ctx.fillText(label, el.x + 6, el.y);
+              } else {
+                ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                ctx.fillText(label, el.x, el.y - 4);
+              }
+              ctx.restore();
+            });
+          });
+        }
+      };
+    }
+
+    function renderCharts(b) {
+      if (energyChart)   energyChart.destroy();
+      if (carbonChart)   carbonChart.destroy();
+      if (billChart)     billChart.destroy();
+      if (lifecycleChart) lifecycleChart.destroy();
+
+      energyChart = new Chart(document.getElementById('energyChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Annual Energy (kWh)', 'Renewable Energy'],
+          datasets: [{ data: [b.energyPerGFA, b.renewableEnergyPerGFA], backgroundColor: BLUE, barPercentage: 0.5 }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Total Annual Energy (kWh) per GFA', font: { size: 13, weight: 'normal' }, padding: { bottom: 10 } }
+          },
+          scales: {
+            x: { grid: { display: false }, border: { color: '#888' } },
+            y: { beginAtZero: true, grid: { color: GRID }, border: { color: '#888' },
+                 ticks: { callback: v => v.toLocaleString() } }
+          }
+        },
+        plugins: [valueLabelPlugin(v => v.toLocaleString(undefined, { maximumFractionDigits: 0 }))]
+      });
+
+      carbonChart = new Chart(document.getElementById('carbonChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Without DER', 'With DER'],
+          datasets: [{ data: [b.carbonWithoutDER, b.carbonWithDER], backgroundColor: BLUE, barPercentage: 0.5 }]
+        },
+        options: {
+          indexAxis: 'y', maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Annual Carbon Emissions (tonnes)', font: { size: 13, weight: 'normal' }, padding: { bottom: 10 } }
+          },
+          scales: {
+            x: { beginAtZero: true, grid: { color: GRID }, border: { color: '#888' } },
+            y: { grid: { display: false }, border: { color: '#888' } }
+          }
+        },
+        plugins: [valueLabelPlugin(v => v.toFixed(2))]
+      });
+
+      billChart = new Chart(document.getElementById('billChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Without DER', 'With DER'],
+          datasets: [{ data: [b.energyBillWithoutDER, b.energyBillWithDER], backgroundColor: BLUE, barPercentage: 0.5 }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Energy Bill (¥)', font: { size: 13, weight: 'normal' }, padding: { bottom: 10 } }
+          },
+          scales: {
+            x: { grid: { display: false }, border: { color: '#888' } },
+            y: { beginAtZero: true, grid: { color: GRID }, border: { color: '#888' },
+                 ticks: { callback: v => '¥' + v.toLocaleString() } }
+          }
+        },
+        plugins: [valueLabelPlugin(v => '¥' + Math.round(v).toLocaleString())]
+      });
+
+      lifecycleChart = new Chart(document.getElementById('lifecycleChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Without DER', 'With DER'],
+          datasets: [{ data: [b.lifecycleCostWithoutDER, b.lifecycleCostWithDER], backgroundColor: BLUE, barPercentage: 0.5 }]
+        },
+        options: {
+          indexAxis: 'y', maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Lifecycle Cost (¥)', font: { size: 13, weight: 'normal' }, padding: { bottom: 10 } }
+          },
+          scales: {
+            x: { beginAtZero: true, grid: { color: GRID }, border: { color: '#888' },
+                 ticks: { callback: v => '¥' + v.toLocaleString() } },
+            y: { grid: { display: false }, border: { color: '#888' } }
+          }
+        },
+        plugins: [valueLabelPlugin(v => '¥' + Math.round(v).toLocaleString())]
+      });
+
+      const carbonReduction = (1 - b.carbonWithDER / b.carbonWithoutDER) * 100;
+      document.getElementById('carbonMeta').textContent =
+        `Building ${b.id} (${b.use}, ${b.tier}) — DER reduces emissions by ${carbonReduction.toFixed(0)}%`;
+
+      const billSavings = b.energyBillWithoutDER - b.energyBillWithDER;
+      document.getElementById('billMeta').textContent =
+        `Annual savings: ¥${billSavings.toLocaleString()} (${((billSavings / b.energyBillWithoutDER) * 100).toFixed(0)}%)`;
+
+      const lcSavings = b.lifecycleCostWithoutDER - b.lifecycleCostWithDER;
+      document.getElementById('lifecycleMeta').textContent =
+        `Lifecycle savings: ¥${lcSavings.toLocaleString()} (${((lcSavings / b.lifecycleCostWithoutDER) * 100).toFixed(0)}%)`;
+    }
+
+    // Render first building on load
+    renderCharts(buildings[0]);
+  </script>
+</body>
+</html>

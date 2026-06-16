@@ -1,0 +1,6 @@
+*.zip
+*.geojson
+archive/
+index_old.html
+index_nihonbashi.html
+config.js
