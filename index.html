@@ -50,12 +50,12 @@
       box-shadow: 0 1px 2px rgba(0,0,0,.25);
       display: flex; align-items: center; gap: 12px;
     }
-    .logo-box img { height: 36px; display: block; }
+    .logo-box img { height: 52px; display: block; }
 
     /* Layer toggle panel */
     .toggle-panel {
       position: absolute;
-      bottom: 40px; left: 10px;
+      bottom: 140px; left: 10px;
       background: rgba(255,255,255,0.92);
       padding: 10px 12px;
       border-radius: 6px;
@@ -122,12 +122,13 @@
       <!-- Title -->
       <div class="title-box">
         <h1>Carbon Neutrality Pathway in Nihonbashi</h1>
-        <p>Georgia Institute of Technology</p>
+        <p>Cost-Benefit Analysis of Revitalization Decisions</p>
       </div>
 
       <!-- Legend -->
       <div class="legend">
         <strong>Revitalization Categories</strong>
+        <div style="font-size:12px;color:#555;margin-bottom:4px;">by building age</div>
         <div><span style="background:#2dc4b2"></span> Maintenance</div>
         <div><span style="background:#f79421"></span> Renovate</div>
         <div><span style="background:#e55e5e"></span> Reconstruct</div>
@@ -301,8 +302,8 @@
       map.on('mouseleave', LAYER_ID, () => { map.getCanvas().style.cursor = ''; popup.remove(); });
     });
 
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: false }), 'bottom-left');
     map.addControl(new mapboxgl.ScaleControl({ maxWidth: 200, unit: 'metric' }), 'bottom-left');
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: false }), 'bottom-left');
 
 
     // ── Building data ─────────────────────────────────────────────────
