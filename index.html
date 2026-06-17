@@ -46,8 +46,9 @@
     .logo-box {
       position: absolute; bottom: 10px; right: 10px;
       background: rgba(255,255,255,0.88);
-      padding: 6px 10px; border-radius: 6px;
+      padding: 6px 12px; border-radius: 6px;
       box-shadow: 0 1px 2px rgba(0,0,0,.25);
+      display: flex; align-items: center; gap: 12px;
     }
     .logo-box img { height: 36px; display: block; }
 
@@ -126,22 +127,24 @@
 
       <!-- Legend -->
       <div class="legend">
-        <strong>TODO: Legend</strong>
-        <div><span style="background:#16d4e0"></span> Buildings</div>
+        <strong>Revitalization Categories</strong>
+        <div><span style="background:#2dc4b2"></span> Maintenance</div>
+        <div><span style="background:#f79421"></span> Renovate</div>
+        <div><span style="background:#e55e5e"></span> Reconstruct</div>
+        <div><span style="background:hsl(183,82%,55%)"></span> Other</div>
       </div>
 
-      <!-- Logo -->
+      <!-- Logos -->
       <div class="logo-box">
         <img src="misc/GeorgiaTech_RGB.png" alt="Georgia Tech" />
+        <img src="misc/utokyo.png" alt="University of Tokyo" />
       </div>
 
       <!-- Layer toggles -->
       <div class="toggle-panel">
         <strong>Layers</strong>
-        <label><input type="checkbox" id="tog-boundary"      checked> Boundary</label>
-        <label><input type="checkbox" id="tog-buildings"     checked> Buildings (3D)</label>
-        <label><input type="checkbox" id="tog-boundary-sub"         > Boundary (sub)</label>
-        <label><input type="checkbox" id="tog-buildings-sub"        > Buildings (sub)</label>
+        <label><input type="checkbox" id="tog-sub"  checked> Buildings (sub-block)</label>
+        <label><input type="checkbox" id="tog-full"        > Buildings (full-block)</label>
       </div>
     </div>
 
@@ -209,6 +212,7 @@
       map.addLayer({
         id: 'boundary', type: 'fill', source: 'boundary',
         'source-layer': '15fbcd21cba2f138becb',
+        layout: { 'visibility': 'none' },
         paint: { 'fill-color': 'hsl(10, 28%, 23%)', 'fill-opacity': 0.8, 'fill-outline-color': 'hsl(10, 78%, 46.9%)' }
       });
 
@@ -217,7 +221,6 @@
       map.addLayer({
         id: 'boundary-sub', type: 'fill', source: 'boundary-sub',
         'source-layer': 'c5e27a2f7f7994fd5dd1',
-        layout: { 'visibility': 'none' },
         paint: { 'fill-color': 'hsl(10, 28%, 23%)', 'fill-opacity': 0.8, 'fill-outline-color': 'hsl(10, 78%, 46.9%)' }
       });
 
@@ -226,11 +229,16 @@
       map.addLayer({
         id: 'buildings-sub', type: 'fill-extrusion', source: 'buildings-sub',
         'source-layer': '49250a77d1ee234afb5b',
-        layout: { 'visibility': 'none' },
         paint: {
           'fill-extrusion-height': ['get', 'height'],
           'fill-extrusion-opacity': 0.9,
-          'fill-extrusion-color': 'hsl(183, 82%, 55%)'
+          'fill-extrusion-color': [
+            'match', ['get', 'id'],
+            [2070, 3044, 3486, 3552, 4560],                          '#2dc4b2', // Maintenance
+            [3037, 3078, 3550],                                       '#e55e5e', // Reconstruct
+            [3067, 3074, 3554, 3562, 4050, 4062, 4562, 4569, 4571],  '#f79421', // Renovate
+            'hsl(183, 82%, 55%)'                                                 // default
+          ]
         }
       });
 
@@ -239,6 +247,7 @@
       map.addLayer({
         id: LAYER_ID, type: 'fill-extrusion', source: 'buildings',
         'source-layer': '09cee41d9612a6fd8568',
+        layout: { 'visibility': 'none' },
         paint: {
           'fill-extrusion-height': ['get', 'height'],
           'fill-extrusion-opacity': 0.9,
@@ -246,16 +255,15 @@
         }
       });
 
-      // Layer toggles
-      [
-        { id: 'tog-boundary',      layer: 'boundary'       },
-        { id: 'tog-buildings',     layer: LAYER_ID         },
-        { id: 'tog-boundary-sub',  layer: 'boundary-sub'   },
-        { id: 'tog-buildings-sub', layer: 'buildings-sub'  },
-      ].forEach(({ id, layer }) => {
-        document.getElementById(id).addEventListener('change', function () {
-          map.setLayoutProperty(layer, 'visibility', this.checked ? 'visible' : 'none');
-        });
+      // Layer toggles — each checkbox controls its boundary + buildings pair
+      const setVis = (layers, visible) =>
+        layers.forEach(l => map.setLayoutProperty(l, 'visibility', visible ? 'visible' : 'none'));
+
+      document.getElementById('tog-sub').addEventListener('change', function () {
+        setVis(['boundary-sub', 'buildings-sub'], this.checked);
+      });
+      document.getElementById('tog-full').addEventListener('change', function () {
+        setVis(['boundary', LAYER_ID], this.checked);
       });
 
       // Hover on buildings-sub
