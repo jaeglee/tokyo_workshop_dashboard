@@ -93,22 +93,22 @@
       font-family: Calibri, "Segoe UI", Arial, sans-serif;
     }
     .building-select { display: flex; align-items: center; gap: 10px; }
-    .building-select label { font-size: 13px; font-weight: 600; white-space: nowrap; color: #404040; }
+    .building-select label { font-size: 15px; font-weight: 600; white-space: nowrap; color: #404040; }
     .building-select select {
       flex: 1; min-width: 0;
-      font-family: Calibri, Arial, sans-serif; font-size: 13px;
+      font-family: Calibri, Arial, sans-serif; font-size: 15px;
       padding: 5px 8px; border: 1px solid #aaa; border-radius: 2px;
     }
-    .panel-hint { font-size: 11px; color: #888; margin-top: 5px; }
+    .panel-hint { font-size: 12px; color: #888; margin-top: 5px; }
 
-    .panel-body { padding: 12px; overflow-y: auto; flex: 1 1 auto; }
+    .panel-body { padding: 12px; overflow: hidden; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 
     /* Charts */
-    .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .chart-card { background: #fff; border: 1px solid #ccc; padding: 10px; }
-    .chart-card-inner { border: 1px solid #d0d0d0; padding: 8px; }
-    .chart-box { position: relative; height: 210px; }
-    .chart-meta { font-size: 11px; color: #666; margin-top: 7px; padding-top: 7px; border-top: 1px solid #eee; }
+    .chart-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 14px; }
+    .chart-card { background: #fff; border: 1px solid #ccc; padding: 10px; display: flex; flex-direction: column; min-height: 0; }
+    .chart-card-inner { border: 1px solid #d0d0d0; padding: 8px; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+    .chart-box { position: relative; flex: 1 1 auto; min-height: 0; }
+    .chart-meta { font-size: 13px; color: #666; margin-top: 7px; padding-top: 7px; border-top: 1px solid #eee; flex-shrink: 0; }
     .muted { color: #777; }
   </style>
 </head>
@@ -256,6 +256,9 @@
         }
       });
 
+      // Keep buildings-sub rendered above the main buildings layer
+      map.moveLayer('buildings-sub');
+
       // Layer toggles — each checkbox controls its boundary + buildings pair
       const setVis = (layers, visible) =>
         layers.forEach(l => map.setLayoutProperty(l, 'visibility', visible ? 'visible' : 'none'));
@@ -341,6 +344,7 @@
     const BLUE = '#4472C4';
     const GRID = '#D9D9D9';
     Chart.defaults.font.family = "Calibri, Arial, sans-serif";
+    Chart.defaults.font.size = 13;
     Chart.defaults.color = '#404040';
 
     let energyChart, carbonChart, billChart, lifecycleChart;
@@ -354,7 +358,7 @@
             chart.getDatasetMeta(di).data.forEach((el, i) => {
               const label = fmt(ds.data[i]);
               ctx.save();
-              ctx.font = '11px Calibri, Arial, sans-serif';
+              ctx.font = '13px Calibri, Arial, sans-serif';
               ctx.fillStyle = '#000';
               if (chart.options.indexAxis === 'y') {
                 ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
@@ -386,7 +390,7 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Total Annual Energy (kWh) per GFA', font: { size: 13, weight: 'normal' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Total Annual Energy (kWh) per GFA', font: { size: 15, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
             x: { grid: { display: false }, border: { color: '#888' } },
@@ -407,7 +411,7 @@
           indexAxis: 'y', maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Annual Carbon Emissions (tonnes)', font: { size: 13, weight: 'normal' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Annual Carbon Emissions (tonnes)', font: { size: 15, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
             x: { beginAtZero: true, grid: { color: GRID }, border: { color: '#888' } },
@@ -427,7 +431,7 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Energy Bill (¥)', font: { size: 13, weight: 'normal' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Energy Bill (¥)', font: { size: 15, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
             x: { grid: { display: false }, border: { color: '#888' } },
@@ -448,7 +452,7 @@
           indexAxis: 'y', maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Lifecycle Cost (¥)', font: { size: 13, weight: 'normal' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Lifecycle Cost (¥)', font: { size: 15, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
             x: { beginAtZero: true, grid: { color: GRID }, border: { color: '#888' },
