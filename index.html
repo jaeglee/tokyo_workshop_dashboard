@@ -9,7 +9,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="config.js"></script>
   <style>
-    :root { --right-bg: #f3f3f3; }
+    :root { --right-bg: #1e1e22; }
     html, body { height: 100%; margin: 0; }
     .split { display: flex; height: 100vh; width: 100vw; }
     .left  { position: relative; flex: 0 0 50%; min-width: 320px; overflow: hidden; background: #ddd; }
@@ -44,6 +44,7 @@
 
     /* Logo */
     .logo-box {
+      
       position: absolute; bottom: 10px; right: 10px;
       background: rgba(255,255,255,0.88);
       padding: 6px 12px; border-radius: 6px;
@@ -87,28 +88,29 @@
     /* ── Right panel ── */
     .panel-header {
       padding: 10px 14px;
-      border-bottom: 1px solid #d0d0d0;
-      background: #fff;
+      border-bottom: 1px solid #3a3a3e;
+      background: #26262b;
       flex-shrink: 0;
       font-family: Calibri, "Segoe UI", Arial, sans-serif;
     }
     .building-select { display: flex; align-items: center; gap: 10px; }
-    .building-select label { font-size: 15px; font-weight: 600; white-space: nowrap; color: #404040; }
+    .building-select label { font-size: 15px; font-weight: 600; white-space: nowrap; color: #e0e0e0; }
     .building-select select {
       flex: 1; min-width: 0;
       font-family: Calibri, Arial, sans-serif; font-size: 15px;
-      padding: 5px 8px; border: 1px solid #aaa; border-radius: 2px;
+      padding: 5px 8px; border: 1px solid #555; border-radius: 2px;
+      background: #2b2b30; color: #e0e0e0;
     }
-    .panel-hint { font-size: 12px; color: #888; margin-top: 5px; }
+    .panel-hint { font-size: 12px; color: #999; margin-top: 5px; }
 
     .panel-body { padding: 12px; overflow: hidden; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 
     /* Charts */
-    .chart-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 14px; }
-    .chart-card { background: #fff; border: 1px solid #ccc; padding: 10px; display: flex; flex-direction: column; min-height: 0; }
-    .chart-card-inner { border: 1px solid #d0d0d0; padding: 8px; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+    .chart-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 14px; }
+    .chart-card { background: #26262b; border: 1px solid #3a3a3e; padding: 10px; display: flex; flex-direction: column; min-height: 0; }
+    .chart-card-inner { border: 1px solid #3a3a3e; padding: 8px; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
     .chart-box { position: relative; flex: 1 1 auto; min-height: 0; }
-    .chart-meta { font-size: 13px; color: #666; margin-top: 7px; padding-top: 7px; border-top: 1px solid #eee; flex-shrink: 0; }
+    .chart-meta { font-size: 13px; color: #aaa; margin-top: 7px; padding-top: 7px; border-top: 1px solid #3a3a3e; flex-shrink: 0; }
     .muted { color: #777; }
   </style>
 </head>
@@ -129,9 +131,9 @@
       <div class="legend">
         <strong>Revitalization Categories</strong>
         <div style="font-size:12px;color:#555;margin-bottom:4px;">by building age</div>
-        <div><span style="background:#2dc4b2"></span> Maintenance</div>
-        <div><span style="background:#f79421"></span> Renovate</div>
-        <div><span style="background:#e55e5e"></span> Reconstruct</div>
+        <div><span style="background:#2dc4b2"></span> Maintenance <small style="color:#777;font-weight:400;">(built &gt; 2000)</small></div>
+        <div><span style="background:#f79421"></span> Renovate <small style="color:#777;font-weight:400;">(built ≤ 2000)</small></div>
+        <div><span style="background:#e55e5e"></span> Reconstruct <small style="color:#777;font-weight:400;">(built ≤ 1980)</small></div>
         <div><span style="background:#999999"></span> Other</div>
       </div>
 
@@ -164,6 +166,7 @@
             <div class="chart-card-inner">
               <div class="chart-box"><canvas id="energyChart"></canvas></div>
             </div>
+            <div class="chart-meta" id="energyMeta"></div>
           </div>
           <div class="chart-card">
             <div class="chart-card-inner">
@@ -182,6 +185,11 @@
               <div class="chart-box"><canvas id="lifecycleChart"></canvas></div>
             </div>
             <div class="chart-meta" id="lifecycleMeta"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-inner">
+              <div class="chart-box"><canvas id="energyMixChart"></canvas></div>
+            </div>
           </div>
         </div>
       </div>
@@ -235,9 +243,9 @@
           'fill-extrusion-opacity': 0.9,
           'fill-extrusion-color': [
             'match', ['get', 'id'],
-            [2070, 3044, 3486, 3552, 4560],                          '#2dc4b2', // Maintenance
-            [3037, 3078, 3550],                                       '#e55e5e', // Reconstruct
-            [3067, 3074, 3554, 3562, 4050, 4062, 4562, 4569, 4571],  '#f79421', // Renovate
+            [2070, 3044, 3486, 3552, 4560],                                          '#2dc4b2', // Maintenance
+            [3037, 3078, 3550, 5039, 5050],                                           '#e55e5e', // Reconstruct
+            [2563, 3042, 3065, 3067, 3074, 3554, 3562, 4050, 4062, 4562, 4569, 4571], '#f79421', // Renovate
             '#999999'                                                            // default (Other)
           ]
         }
@@ -311,23 +319,28 @@
 
     // ── Building data ─────────────────────────────────────────────────
     const buildings = [
-      {"id":"2070","use":"Office","gfa":410.5,"tier":"Maintenance","energyPerGFA":20497.9,"renewableEnergyPerGFA":8199.1,"carbonWithDER":3.19,"carbonWithoutDER":4.83,"energyBillWithDER":16659,"energyBillWithoutDER":29262,"lifecycleCostWithDER":5789591,"lifecycleCostWithoutDER":7866536},
-      {"id":"3037","use":"Office","gfa":3552.2,"tier":"Reconstruct","energyPerGFA":177361.1,"renewableEnergyPerGFA":70944.4,"carbonWithDER":27.64,"carbonWithoutDER":41.81,"energyBillWithDER":144142,"energyBillWithoutDER":253193,"lifecycleCostWithDER":50095357,"lifecycleCostWithoutDER":68066454},
-      {"id":"3044","use":"Office","gfa":528.8,"tier":"Maintenance","energyPerGFA":26403.4,"renewableEnergyPerGFA":10561.4,"carbonWithDER":4.12,"carbonWithoutDER":6.22,"energyBillWithDER":21458,"energyBillWithoutDER":37692,"lifecycleCostWithDER":7457594,"lifecycleCostWithoutDER":10132915},
-      {"id":"3067","use":"Office","gfa":51.0,"tier":"Renovate","energyPerGFA":2546.3,"renewableEnergyPerGFA":1018.5,"carbonWithDER":0.4,"carbonWithoutDER":0.6,"energyBillWithDER":2069,"energyBillWithoutDER":3635,"lifecycleCostWithDER":719196,"lifecycleCostWithoutDER":977198},
-      {"id":"3074","use":"Residence & Commercial Mixed","gfa":583.7,"tier":"Renovate","energyPerGFA":29143.0,"renewableEnergyPerGFA":11657.2,"carbonWithDER":4.54,"carbonWithoutDER":6.87,"energyBillWithDER":23685,"energyBillWithoutDER":41603,"lifecycleCostWithDER":8231391,"lifecycleCostWithoutDER":11184302},
-      {"id":"3078","use":"Office","gfa":636.0,"tier":"Reconstruct","energyPerGFA":31757.2,"renewableEnergyPerGFA":12702.9,"carbonWithDER":4.95,"carbonWithoutDER":7.49,"energyBillWithDER":25809,"energyBillWithoutDER":45335,"lifecycleCostWithDER":8969782,"lifecycleCostWithoutDER":12187582},
-      {"id":"3486","use":"Apartment","gfa":469.3,"tier":"Maintenance","energyPerGFA":23429.7,"renewableEnergyPerGFA":9371.9,"carbonWithDER":3.65,"carbonWithoutDER":5.52,"energyBillWithDER":19041,"energyBillWithoutDER":33447,"lifecycleCostWithDER":6617692,"lifecycleCostWithoutDER":8991708},
-      {"id":"3550","use":"Office","gfa":875.4,"tier":"Reconstruct","energyPerGFA":43707.8,"renewableEnergyPerGFA":17483.1,"carbonWithDER":6.81,"carbonWithoutDER":10.3,"energyBillWithDER":35521,"energyBillWithoutDER":62395,"lifecycleCostWithDER":12345207,"lifecycleCostWithoutDER":16773900},
-      {"id":"3552","use":"Residence & Commercial Mixed","gfa":109.3,"tier":"Maintenance","energyPerGFA":5458.1,"renewableEnergyPerGFA":2183.2,"carbonWithDER":0.85,"carbonWithoutDER":1.29,"energyBillWithDER":4436,"energyBillWithoutDER":7792,"lifecycleCostWithDER":1541636,"lifecycleCostWithoutDER":2094680},
-      {"id":"3554","use":"Office","gfa":2148.7,"tier":"Renovate","energyPerGFA":107281.1,"renewableEnergyPerGFA":42912.4,"carbonWithDER":16.72,"carbonWithoutDER":25.29,"energyBillWithDER":87188,"energyBillWithoutDER":153150,"lifecycleCostWithDER":30301372,"lifecycleCostWithoutDER":41171620},
-      {"id":"3562","use":"Office","gfa":1778.1,"tier":"Renovate","energyPerGFA":88781.6,"renewableEnergyPerGFA":35512.6,"carbonWithDER":13.84,"carbonWithoutDER":20.93,"energyBillWithDER":72153,"energyBillWithoutDER":126741,"lifecycleCostWithDER":25076214,"lifecycleCostWithoutDER":34071999},
-      {"id":"4050","use":"Office","gfa":6231.0,"tier":"Renovate","energyPerGFA":311112.1,"renewableEnergyPerGFA":124444.9,"carbonWithDER":48.49,"carbonWithoutDER":73.35,"energyBillWithDER":252842,"energyBillWithoutDER":444130,"lifecycleCostWithDER":87873109,"lifecycleCostWithoutDER":119396514},
-      {"id":"4062","use":"Office","gfa":1063.0,"tier":"Renovate","energyPerGFA":53072.8,"renewableEnergyPerGFA":21229.1,"carbonWithDER":8.27,"carbonWithoutDER":12.51,"energyBillWithDER":43132,"energyBillWithoutDER":75764,"lifecycleCostWithDER":14990314,"lifecycleCostWithoutDER":20367906},
-      {"id":"4560","use":"Residence & Commercial Mixed","gfa":194.3,"tier":"Maintenance","energyPerGFA":9700.6,"renewableEnergyPerGFA":3880.2,"carbonWithDER":1.51,"carbonWithoutDER":2.29,"energyBillWithDER":7884,"energyBillWithoutDER":13848,"lifecycleCostWithDER":2739922,"lifecycleCostWithoutDER":3722835},
-      {"id":"4562","use":"Office","gfa":333.4,"tier":"Renovate","energyPerGFA":16648.4,"renewableEnergyPerGFA":6659.4,"carbonWithDER":2.59,"carbonWithoutDER":3.92,"energyBillWithDER":13530,"energyBillWithoutDER":23767,"lifecycleCostWithDER":4702318,"lifecycleCostWithoutDER":6389217},
-      {"id":"4569","use":"Office","gfa":850.3,"tier":"Renovate","energyPerGFA":42453.5,"renewableEnergyPerGFA":16981.4,"carbonWithDER":6.62,"carbonWithoutDER":10.01,"energyBillWithDER":34502,"energyBillWithoutDER":60605,"lifecycleCostWithDER":11990926,"lifecycleCostWithoutDER":16292524},
-      {"id":"4571","use":"Office","gfa":1081.3,"tier":"Renovate","energyPerGFA":53989.6,"renewableEnergyPerGFA":21595.9,"carbonWithDER":8.41,"carbonWithoutDER":12.73,"energyBillWithDER":43878,"energyBillWithoutDER":77073,"lifecycleCostWithDER":15249284,"lifecycleCostWithoutDER":20719779}
+      {"id":"2070","use":"Office","gfa":410.5,"tier":"Maintenance","builtYear":2019,"buildingAge":7,"energyPerGFA":20497.9,"renewableEnergyPerGFA":8199.1,"carbonWithDER":3.19,"carbonWithoutDER":4.83,"energyBillWithDER":16659,"energyBillWithoutDER":29262,"lifecycleCostWithDER":5789591,"lifecycleCostWithoutDER":7866536,"grid":10.77,"pv":5.91,"batteries":3.82,"totalEnergyDemand":20.5},
+      {"id":"2563","use":"Residence & Commercial Mixed","gfa":82.1,"tier":"Renovate","builtYear":1990,"buildingAge":36,"energyPerGFA":4099.3,"renewableEnergyPerGFA":1639.7,"carbonWithDER":0.64,"carbonWithoutDER":0.97,"energyBillWithDER":3331,"energyBillWithoutDER":5852,"lifecycleCostWithDER":1157831,"lifecycleCostWithoutDER":1573188,"grid":2.15,"pv":1.18,"batteries":0.76,"totalEnergyDemand":4.1},
+      {"id":"3037","use":"Office","gfa":3552.2,"tier":"Reconstruct","builtYear":1967,"buildingAge":59,"energyPerGFA":177361.1,"renewableEnergyPerGFA":70944.4,"carbonWithDER":27.64,"carbonWithoutDER":41.81,"energyBillWithDER":144142,"energyBillWithoutDER":253193,"lifecycleCostWithDER":50095357,"lifecycleCostWithoutDER":68066454,"grid":93.17,"pv":51.13,"batteries":33.06,"totalEnergyDemand":177.36},
+      {"id":"3042","use":"Office","gfa":3333.3,"tier":"Renovate","builtYear":1990,"buildingAge":36,"energyPerGFA":166427.7,"renewableEnergyPerGFA":66571.1,"carbonWithDER":25.94,"carbonWithoutDER":39.24,"energyBillWithDER":135256,"energyBillWithoutDER":237585,"lifecycleCostWithDER":47007239,"lifecycleCostWithoutDER":63870513,"grid":87.43,"pv":47.98,"batteries":31.02,"totalEnergyDemand":166.43},
+      {"id":"3044","use":"Office","gfa":528.8,"tier":"Maintenance","builtYear":2010,"buildingAge":16,"energyPerGFA":26403.4,"renewableEnergyPerGFA":10561.4,"carbonWithDER":4.12,"carbonWithoutDER":6.22,"energyBillWithDER":21458,"energyBillWithoutDER":37692,"lifecycleCostWithDER":7457594,"lifecycleCostWithoutDER":10132915,"grid":13.87,"pv":7.61,"batteries":4.92,"totalEnergyDemand":26.4},
+      {"id":"3065","use":"Residence & Commercial Mixed","gfa":177.5,"tier":"Renovate","builtYear":1990,"buildingAge":36,"energyPerGFA":8863.9,"renewableEnergyPerGFA":3545.6,"carbonWithDER":1.38,"carbonWithoutDER":2.09,"energyBillWithDER":7204,"energyBillWithoutDER":12654,"lifecycleCostWithDER":2503587,"lifecycleCostWithoutDER":3401719,"grid":4.66,"pv":2.56,"batteries":1.65,"totalEnergyDemand":8.86},
+      {"id":"3067","use":"Office","gfa":51.0,"tier":"Renovate","builtYear":1995,"buildingAge":31,"energyPerGFA":2546.3,"renewableEnergyPerGFA":1018.5,"carbonWithDER":0.4,"carbonWithoutDER":0.6,"energyBillWithDER":2069,"energyBillWithoutDER":3635,"lifecycleCostWithDER":719196,"lifecycleCostWithoutDER":977198,"grid":1.34,"pv":0.73,"batteries":0.47,"totalEnergyDemand":2.55},
+      {"id":"3074","use":"Residence & Commercial Mixed","gfa":583.7,"tier":"Renovate","builtYear":1998,"buildingAge":28,"energyPerGFA":29143.0,"renewableEnergyPerGFA":11657.2,"carbonWithDER":4.54,"carbonWithoutDER":6.87,"energyBillWithDER":23685,"energyBillWithoutDER":41603,"lifecycleCostWithDER":8231391,"lifecycleCostWithoutDER":11184302,"grid":15.31,"pv":8.4,"batteries":5.43,"totalEnergyDemand":29.14},
+      {"id":"3078","use":"Office","gfa":636.0,"tier":"Reconstruct","builtYear":1962,"buildingAge":64,"energyPerGFA":31757.2,"renewableEnergyPerGFA":12702.9,"carbonWithDER":4.95,"carbonWithoutDER":7.49,"energyBillWithDER":25809,"energyBillWithoutDER":45335,"lifecycleCostWithDER":8969782,"lifecycleCostWithoutDER":12187582,"grid":16.68,"pv":9.16,"batteries":5.92,"totalEnergyDemand":31.76},
+      {"id":"3486","use":"Apartment","gfa":469.3,"tier":"Maintenance","builtYear":2009,"buildingAge":17,"energyPerGFA":23429.7,"renewableEnergyPerGFA":9371.9,"carbonWithDER":3.65,"carbonWithoutDER":5.52,"energyBillWithDER":19041,"energyBillWithoutDER":33447,"lifecycleCostWithDER":6617692,"lifecycleCostWithoutDER":8991708,"grid":12.31,"pv":6.75,"batteries":4.37,"totalEnergyDemand":23.43},
+      {"id":"3550","use":"Office","gfa":875.4,"tier":"Reconstruct","builtYear":1968,"buildingAge":58,"energyPerGFA":43707.8,"renewableEnergyPerGFA":17483.1,"carbonWithDER":6.81,"carbonWithoutDER":10.3,"energyBillWithDER":35521,"energyBillWithoutDER":62395,"lifecycleCostWithDER":12345207,"lifecycleCostWithoutDER":16773900,"grid":22.96,"pv":12.6,"batteries":8.15,"totalEnergyDemand":43.71},
+      {"id":"3552","use":"Residence & Commercial Mixed","gfa":109.3,"tier":"Maintenance","builtYear":2020,"buildingAge":6,"energyPerGFA":5458.1,"renewableEnergyPerGFA":2183.2,"carbonWithDER":0.85,"carbonWithoutDER":1.29,"energyBillWithDER":4436,"energyBillWithoutDER":7792,"lifecycleCostWithDER":1541636,"lifecycleCostWithoutDER":2094680,"grid":2.87,"pv":1.57,"batteries":1.02,"totalEnergyDemand":5.46},
+      {"id":"3554","use":"Office","gfa":2148.7,"tier":"Renovate","builtYear":1993,"buildingAge":33,"energyPerGFA":107281.1,"renewableEnergyPerGFA":42912.4,"carbonWithDER":16.72,"carbonWithoutDER":25.29,"energyBillWithDER":87188,"energyBillWithoutDER":153150,"lifecycleCostWithDER":30301372,"lifecycleCostWithoutDER":41171620,"grid":56.36,"pv":30.93,"batteries":20.0,"totalEnergyDemand":107.28},
+      {"id":"3562","use":"Office","gfa":1778.1,"tier":"Renovate","builtYear":1983,"buildingAge":43,"energyPerGFA":88781.6,"renewableEnergyPerGFA":35512.6,"carbonWithDER":13.84,"carbonWithoutDER":20.93,"energyBillWithDER":72153,"energyBillWithoutDER":126741,"lifecycleCostWithDER":25076214,"lifecycleCostWithoutDER":34071999,"grid":46.64,"pv":25.59,"batteries":16.55,"totalEnergyDemand":88.78},
+      {"id":"4050","use":"Office","gfa":6231.0,"tier":"Renovate","builtYear":1995,"buildingAge":31,"energyPerGFA":311112.1,"renewableEnergyPerGFA":124444.9,"carbonWithDER":48.49,"carbonWithoutDER":73.35,"energyBillWithDER":252842,"energyBillWithoutDER":444130,"lifecycleCostWithDER":87873109,"lifecycleCostWithoutDER":119396514,"grid":163.43,"pv":89.69,"batteries":57.99,"totalEnergyDemand":311.11},
+      {"id":"4062","use":"Office","gfa":1063.0,"tier":"Renovate","builtYear":1988,"buildingAge":38,"energyPerGFA":53072.8,"renewableEnergyPerGFA":21229.1,"carbonWithDER":8.27,"carbonWithoutDER":12.51,"energyBillWithDER":43132,"energyBillWithoutDER":75764,"lifecycleCostWithDER":14990314,"lifecycleCostWithoutDER":20367906,"grid":27.88,"pv":15.3,"batteries":9.89,"totalEnergyDemand":53.07},
+      {"id":"4560","use":"Residence & Commercial Mixed","gfa":194.3,"tier":"Maintenance","builtYear":2004,"buildingAge":22,"energyPerGFA":9700.6,"renewableEnergyPerGFA":3880.2,"carbonWithDER":1.51,"carbonWithoutDER":2.29,"energyBillWithDER":7884,"energyBillWithoutDER":13848,"lifecycleCostWithDER":2739922,"lifecycleCostWithoutDER":3722835,"grid":5.1,"pv":2.8,"batteries":1.81,"totalEnergyDemand":9.7},
+      {"id":"4562","use":"Office","gfa":333.4,"tier":"Renovate","builtYear":1998,"buildingAge":28,"energyPerGFA":16648.4,"renewableEnergyPerGFA":6659.4,"carbonWithDER":2.59,"carbonWithoutDER":3.92,"energyBillWithDER":13530,"energyBillWithoutDER":23767,"lifecycleCostWithDER":4702318,"lifecycleCostWithoutDER":6389217,"grid":8.75,"pv":4.8,"batteries":3.1,"totalEnergyDemand":16.65},
+      {"id":"4569","use":"Office","gfa":850.3,"tier":"Renovate","builtYear":1984,"buildingAge":42,"energyPerGFA":42453.5,"renewableEnergyPerGFA":16981.4,"carbonWithDER":6.62,"carbonWithoutDER":10.01,"energyBillWithDER":34502,"energyBillWithoutDER":60605,"lifecycleCostWithDER":11990926,"lifecycleCostWithoutDER":16292524,"grid":22.3,"pv":12.24,"batteries":7.91,"totalEnergyDemand":42.45},
+      {"id":"4571","use":"Office","gfa":1081.3,"tier":"Renovate","builtYear":1986,"buildingAge":40,"energyPerGFA":53989.6,"renewableEnergyPerGFA":21595.9,"carbonWithDER":8.41,"carbonWithoutDER":12.73,"energyBillWithDER":43878,"energyBillWithoutDER":77073,"lifecycleCostWithDER":15249284,"lifecycleCostWithoutDER":20719779,"grid":28.36,"pv":15.56,"batteries":10.06,"totalEnergyDemand":53.99},
+      {"id":"5039","use":"Public","gfa":534.2,"tier":"Reconstruct","builtYear":1978,"buildingAge":48,"energyPerGFA":26672.3,"renewableEnergyPerGFA":10668.9,"carbonWithDER":4.16,"carbonWithoutDER":6.29,"energyBillWithDER":21677,"energyBillWithoutDER":38076,"lifecycleCostWithDER":7533560,"lifecycleCostWithoutDER":10236133,"grid":14.01,"pv":7.69,"batteries":4.97,"totalEnergyDemand":26.67},
+      {"id":"5050","use":"Office","gfa":292.5,"tier":"Reconstruct","builtYear":1975,"buildingAge":51,"energyPerGFA":14605.4,"renewableEnergyPerGFA":5842.1,"carbonWithDER":2.28,"carbonWithoutDER":3.44,"energyBillWithDER":11870,"energyBillWithoutDER":20850,"lifecycleCostWithDER":4125264,"lifecycleCostWithoutDER":5605152,"grid":7.67,"pv":4.21,"batteries":2.72,"totalEnergyDemand":14.61}
     ];
 
     // ── Dropdown ──────────────────────────────────────────────────────
@@ -341,13 +354,14 @@
     select.addEventListener('change', () => renderCharts(buildings[select.value]));
 
     // ── Chart rendering ───────────────────────────────────────────────
-    const BLUE = '#4472C4';
-    const GRID = '#D9D9D9';
+    const BLUE = '#5B9BD5';
+    const GRID = '#3a3a3e';
+    const AXIS = '#777';
     Chart.defaults.font.family = "Calibri, Arial, sans-serif";
-    Chart.defaults.font.size = 13;
-    Chart.defaults.color = '#404040';
+    Chart.defaults.font.size = 15;
+    Chart.defaults.color = '#cfcfcf';
 
-    let energyChart, carbonChart, billChart, lifecycleChart;
+    let energyChart, carbonChart, billChart, lifecycleChart, energyMixChart;
 
     function valueLabelPlugin(fmt) {
       return {
@@ -358,8 +372,8 @@
             chart.getDatasetMeta(di).data.forEach((el, i) => {
               const label = fmt(ds.data[i]);
               ctx.save();
-              ctx.font = '13px Calibri, Arial, sans-serif';
-              ctx.fillStyle = '#000';
+              ctx.font = '14px Calibri, Arial, sans-serif';
+              ctx.fillStyle = '#f0f0f0';
               if (chart.options.indexAxis === 'y') {
                 ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
                 ctx.fillText(label, el.x + 6, el.y);
@@ -374,11 +388,35 @@
       };
     }
 
+    function pieValueLabelPlugin(fmt) {
+      return {
+        id: 'pieValueLabels',
+        afterDatasetsDraw(chart) {
+          const { ctx } = chart;
+          chart.data.datasets.forEach((ds, di) => {
+            chart.getDatasetMeta(di).data.forEach((el, i) => {
+              const angle = (el.startAngle + el.endAngle) / 2;
+              const r = el.outerRadius + 16;
+              const x = el.x + Math.cos(angle) * r;
+              const y = el.y + Math.sin(angle) * r;
+              ctx.save();
+              ctx.font = '14px Calibri, Arial, sans-serif';
+              ctx.fillStyle = '#f0f0f0';
+              ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+              ctx.fillText(fmt(ds.data[i]), x, y);
+              ctx.restore();
+            });
+          });
+        }
+      };
+    }
+
     function renderCharts(b) {
       if (energyChart)   energyChart.destroy();
       if (carbonChart)   carbonChart.destroy();
       if (billChart)     billChart.destroy();
       if (lifecycleChart) lifecycleChart.destroy();
+      if (energyMixChart) energyMixChart.destroy();
 
       energyChart = new Chart(document.getElementById('energyChart'), {
         type: 'bar',
@@ -390,16 +428,19 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Total Annual Energy (kWh) per GFA', font: { size: 15, weight: 'bold' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Total Annual Energy (kWh) per GFA', font: { size: 17, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
-            x: { grid: { display: false }, border: { color: '#888' } },
-            y: { beginAtZero: true, grid: { color: GRID }, border: { color: '#888' },
+            x: { grid: { display: false }, border: { color: AXIS } },
+            y: { beginAtZero: true, grid: { color: GRID }, border: { color: AXIS },
                  ticks: { callback: v => v.toLocaleString() } }
           }
         },
         plugins: [valueLabelPlugin(v => v.toLocaleString(undefined, { maximumFractionDigits: 0 }))]
       });
+
+      document.getElementById('energyMeta').textContent =
+        `Built ${b.builtYear} (${b.buildingAge} yrs old)`;
 
       carbonChart = new Chart(document.getElementById('carbonChart'), {
         type: 'bar',
@@ -411,11 +452,11 @@
           indexAxis: 'y', maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Annual Carbon Emissions (tonnes)', font: { size: 15, weight: 'bold' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Annual Carbon Emissions (tonnes)', font: { size: 17, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
-            x: { beginAtZero: true, grid: { color: GRID }, border: { color: '#888' } },
-            y: { grid: { display: false }, border: { color: '#888' } }
+            x: { beginAtZero: true, grid: { color: GRID }, border: { color: AXIS } },
+            y: { grid: { display: false }, border: { color: AXIS } }
           }
         },
         plugins: [valueLabelPlugin(v => v.toFixed(2))]
@@ -431,11 +472,11 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Energy Bill (¥)', font: { size: 15, weight: 'bold' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Energy Bill (¥)', font: { size: 17, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
-            x: { grid: { display: false }, border: { color: '#888' } },
-            y: { beginAtZero: true, grid: { color: GRID }, border: { color: '#888' },
+            x: { grid: { display: false }, border: { color: AXIS } },
+            y: { beginAtZero: true, grid: { color: GRID }, border: { color: AXIS },
                  ticks: { callback: v => '¥' + v.toLocaleString() } }
           }
         },
@@ -452,15 +493,31 @@
           indexAxis: 'y', maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Lifecycle Cost (¥)', font: { size: 15, weight: 'bold' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Lifecycle Cost (¥)', font: { size: 17, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
-            x: { beginAtZero: true, grid: { color: GRID }, border: { color: '#888' },
+            x: { beginAtZero: true, grid: { color: GRID }, border: { color: AXIS },
                  ticks: { callback: v => '¥' + v.toLocaleString() } },
-            y: { grid: { display: false }, border: { color: '#888' } }
+            y: { grid: { display: false }, border: { color: AXIS } }
           }
         },
         plugins: [valueLabelPlugin(v => '¥' + Math.round(v).toLocaleString())]
+      });
+
+      energyMixChart = new Chart(document.getElementById('energyMixChart'), {
+        type: 'pie',
+        data: {
+          labels: ['Grid', 'PV', 'Batteries'],
+          datasets: [{ data: [b.grid, b.pv, b.batteries], backgroundColor: ['#4472C4', '#C0504D', '#9BBB59'] }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: 'right' },
+            title: { display: true, text: 'Total Building Energy Demand (MWh)', font: { size: 17, weight: 'bold' }, padding: { bottom: 10 } }
+          }
+        },
+        plugins: [pieValueLabelPlugin(v => v.toFixed(2))]
       });
 
       const carbonReduction = (1 - b.carbonWithDER / b.carbonWithoutDER) * 100;
