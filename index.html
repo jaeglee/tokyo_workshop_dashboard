@@ -12,8 +12,8 @@
     :root { --right-bg: #1e1e22; }
     html, body { height: 100%; margin: 0; }
     .split { display: flex; height: 100vh; width: 100vw; }
-    .left  { position: relative; flex: 0 0 50%; min-width: 320px; overflow: hidden; background: #ddd; }
-    .right { flex: 1 1 50%; min-width: 320px; background: var(--right-bg); display: flex; flex-direction: column; overflow: hidden; }
+    .left  { position: relative; flex: 0 0 40%; min-width: 320px; overflow: hidden; background: #ddd; }
+    .right { flex: 1 1 60%; min-width: 320px; background: var(--right-bg); display: flex; flex-direction: column; overflow: hidden; }
     #map { position: absolute; inset: 0; }
 
     /* Title box */
@@ -107,7 +107,7 @@
     .panel-body { padding: 12px; overflow: hidden; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 
     /* Charts */
-    .chart-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 14px; }
+    .chart-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 14px; }
     .chart-card { background: #26262b; border: 1px solid #3a3a3e; padding: 10px; display: flex; flex-direction: column; min-height: 0; }
     .chart-card-inner { border: 1px solid #3a3a3e; padding: 8px; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
     .chart-box { position: relative; flex: 1 1 auto; min-height: 0; }
@@ -382,7 +382,7 @@
     const GRID = '#3a3a3e';
     const AXIS = '#777';
     Chart.defaults.font.family = "Calibri, Arial, sans-serif";
-    Chart.defaults.font.size = 15;
+    Chart.defaults.font.size = 17;
     Chart.defaults.color = '#cfcfcf';
 
     let energyChart, carbonChart, billChart, lifecycleChart, energyMixChart;
@@ -402,8 +402,8 @@
                 ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
                 ctx.fillText(label, el.x + 6, el.y);
               } else {
-                ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-                ctx.fillText(label, el.x, el.y - 4);
+                ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+                ctx.fillText(label, el.x, el.y + 6);
               }
               ctx.restore();
             });
@@ -464,7 +464,7 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Total Annual Energy (kWh) per GFA', font: { size: 19, weight: 'bold' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Total Annual Energy (kWh) per GFA', font: { size: 22, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
             x: { grid: { display: false }, border: { color: AXIS } },
@@ -485,14 +485,14 @@
           datasets: [{ data: [b.carbonWithoutDER, b.carbonWithDER], backgroundColor: BLUE, barPercentage: 0.5 }]
         },
         options: {
-          indexAxis: 'y', maintainAspectRatio: false,
+          maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Annual Carbon Emissions (tonnes)', font: { size: 19, weight: 'bold' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Annual Carbon Emissions (tonnes)', font: { size: 22, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
-            x: { beginAtZero: true, grid: { color: GRID }, border: { color: AXIS } },
-            y: { grid: { display: false }, border: { color: AXIS } }
+            x: { grid: { display: false }, border: { color: AXIS } },
+            y: { beginAtZero: true, grid: { color: GRID }, border: { color: AXIS } }
           }
         },
         plugins: [valueLabelPlugin(v => v.toFixed(2))]
@@ -508,7 +508,7 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Energy Bill (¥)', font: { size: 19, weight: 'bold' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Energy Bill (¥)', font: { size: 22, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
             x: { grid: { display: false }, border: { color: AXIS } },
@@ -526,15 +526,15 @@
           datasets: [{ data: [b.lifecycleCostWithoutDER, b.lifecycleCostWithDER], backgroundColor: BLUE, barPercentage: 0.5 }]
         },
         options: {
-          indexAxis: 'y', maintainAspectRatio: false,
+          maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Lifecycle Cost (¥)', font: { size: 19, weight: 'bold' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Lifecycle Cost (¥)', font: { size: 22, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
-            x: { beginAtZero: true, grid: { color: GRID }, border: { color: AXIS },
-                 ticks: { callback: v => '¥' + v.toLocaleString() } },
-            y: { grid: { display: false }, border: { color: AXIS } }
+            x: { grid: { display: false }, border: { color: AXIS } },
+            y: { beginAtZero: true, grid: { color: GRID }, border: { color: AXIS },
+                 ticks: { callback: v => '¥' + v.toLocaleString() } }
           }
         },
         plugins: [valueLabelPlugin(v => '¥' + Math.round(v).toLocaleString())]
@@ -549,8 +549,8 @@
         options: {
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: true, position: 'right', labels: { font: { size: 16 } } },
-            title: { display: true, text: 'Total Building Energy Demand (MWh)', font: { size: 19, weight: 'bold' }, padding: { bottom: 10 } }
+            legend: { display: true, position: 'right', labels: { font: { size: 18 } } },
+            title: { display: true, text: 'Total Building Energy Demand (MWh)', font: { size: 22, weight: 'bold' }, padding: { bottom: 10 } }
           }
         },
         plugins: [pieValueLabelPlugin((v, total) => (v / total * 100).toFixed(1) + '%')]
