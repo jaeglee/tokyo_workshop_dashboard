@@ -45,6 +45,7 @@
     /* Logo */
     .logo-box {
       
+      
       position: absolute; bottom: 10px; right: 10px;
       background: rgba(255,255,255,0.88);
       padding: 6px 12px; border-radius: 6px;
@@ -106,12 +107,21 @@
     .panel-body { padding: 12px; overflow: hidden; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 
     /* Charts */
-    .chart-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 14px; }
+    .chart-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 14px; }
     .chart-card { background: #26262b; border: 1px solid #3a3a3e; padding: 10px; display: flex; flex-direction: column; min-height: 0; }
     .chart-card-inner { border: 1px solid #3a3a3e; padding: 8px; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
     .chart-box { position: relative; flex: 1 1 auto; min-height: 0; }
     .chart-meta { font-size: 13px; color: #aaa; margin-top: 7px; padding-top: 7px; border-top: 1px solid #3a3a3e; flex-shrink: 0; }
     .muted { color: #777; }
+
+    /* Info panel */
+    .info-box { font-family: Calibri, "Segoe UI", Arial, sans-serif; color: #e0e0e0; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+    .info-box h2 { font-size: 19px; font-weight: bold; margin: 0 0 12px; color: #fff; }
+    .info-box .info-row { font-size: 14px; color: #ccc; margin-bottom: 7px; }
+    .info-box .info-row span { color: #888; }
+    .info-cost { margin-top: auto; padding-top: 10px; border-top: 1px solid #3a3a3e; }
+    .info-cost .info-cost-label { font-size: 13px; color: #aaa; }
+    .info-cost .info-cost-value { font-size: 22px; font-weight: bold; color: #fff; }
   </style>
 </head>
 <body>
@@ -164,6 +174,16 @@
         <div class="chart-grid">
           <div class="chart-card">
             <div class="chart-card-inner">
+              <div class="info-box" id="infoBox"></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-inner">
+              <div class="chart-box"><canvas id="energyMixChart"></canvas></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-inner">
               <div class="chart-box"><canvas id="energyChart"></canvas></div>
             </div>
             <div class="chart-meta" id="energyMeta"></div>
@@ -185,11 +205,6 @@
               <div class="chart-box"><canvas id="lifecycleChart"></canvas></div>
             </div>
             <div class="chart-meta" id="lifecycleMeta"></div>
-          </div>
-          <div class="chart-card">
-            <div class="chart-card-inner">
-              <div class="chart-box"><canvas id="energyMixChart"></canvas></div>
-            </div>
           </div>
         </div>
       </div>
@@ -284,8 +299,12 @@
         if (!e.features?.length) return;
         const p = e.features[0].properties || {};
         const bid = p.id ?? p.fid ?? p.building_id ?? '—';
+        const b = buildings.find(x => x.id === String(bid));
+        const costHTML = b
+          ? `<br>Energy Bill: ¥${b.energyBillWithoutDER.toLocaleString()}<br>Lifecycle Cost: ¥${b.lifecycleCostWithoutDER.toLocaleString()}`
+          : '';
         popup.setLngLat(e.lngLat)
-          .setHTML(`<div style="font:12px/1.5 system-ui;"><strong>Building ${bid}</strong><br>Height: ${p.height ?? '—'} m</div>`)
+          .setHTML(`<div style="font:12px/1.5 system-ui;"><strong>Building ${bid}</strong><br>Height: ${p.height ?? '—'} m${costHTML}</div>`)
           .addTo(map);
       });
       map.on('mouseleave', 'buildings-sub', () => { map.getCanvas().style.cursor = ''; popup.remove(); });
@@ -306,8 +325,13 @@
       map.on('mousemove',  LAYER_ID, (e) => {
         if (!e.features?.length) return;
         const p = e.features[0].properties || {};
+        const bid = p.id ?? p.fid ?? p.building_id ?? '—';
+        const b = buildings.find(x => x.id === String(bid));
+        const costHTML = b
+          ? `<br>Energy Bill: ¥${b.energyBillWithoutDER.toLocaleString()}<br>Lifecycle Cost: ¥${b.lifecycleCostWithoutDER.toLocaleString()}`
+          : '';
         popup.setLngLat(e.lngLat)
-          .setHTML(`<div style="font:12px/1.5 system-ui;"><strong>${p.building_id ?? p.id ?? '—'}</strong><br>Height: ${p.height ?? '—'} m</div>`)
+          .setHTML(`<div style="font:12px/1.5 system-ui;"><strong>${p.building_id ?? p.id ?? '—'}</strong><br>Height: ${p.height ?? '—'} m${costHTML}</div>`)
           .addTo(map);
       });
       map.on('mouseleave', LAYER_ID, () => { map.getCanvas().style.cursor = ''; popup.remove(); });
@@ -394,16 +418,17 @@
         afterDatasetsDraw(chart) {
           const { ctx } = chart;
           chart.data.datasets.forEach((ds, di) => {
+            const total = ds.data.reduce((sum, v) => sum + v, 0);
             chart.getDatasetMeta(di).data.forEach((el, i) => {
               const angle = (el.startAngle + el.endAngle) / 2;
-              const r = el.outerRadius + 16;
+              const r = el.outerRadius * 0.65;
               const x = el.x + Math.cos(angle) * r;
               const y = el.y + Math.sin(angle) * r;
               ctx.save();
               ctx.font = '14px Calibri, Arial, sans-serif';
               ctx.fillStyle = '#f0f0f0';
               ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-              ctx.fillText(fmt(ds.data[i]), x, y);
+              ctx.fillText(fmt(ds.data[i], total), x, y);
               ctx.restore();
             });
           });
@@ -418,6 +443,17 @@
       if (lifecycleChart) lifecycleChart.destroy();
       if (energyMixChart) energyMixChart.destroy();
 
+      document.getElementById('infoBox').innerHTML = `
+        <h2>Building ${b.id}</h2>
+        <div class="info-row"><span>Use:</span> ${b.use}</div>
+        <div class="info-row"><span>Tier:</span> ${b.tier}</div>
+        <div class="info-row"><span>Built:</span> ${b.builtYear} (${b.buildingAge} yrs old)</div>
+        <div class="info-row"><span>GFA:</span> ${b.gfa.toLocaleString()} m²</div>
+        <div class="info-cost">
+          <div class="info-cost-label">Total ${b.tier} Cost</div>
+          <div class="info-cost-value">¥${b.lifecycleCostWithoutDER.toLocaleString()}</div>
+        </div>`;
+
       energyChart = new Chart(document.getElementById('energyChart'), {
         type: 'bar',
         data: {
@@ -428,7 +464,7 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Total Annual Energy (kWh) per GFA', font: { size: 17, weight: 'bold' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Total Annual Energy (kWh) per GFA', font: { size: 19, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
             x: { grid: { display: false }, border: { color: AXIS } },
@@ -452,7 +488,7 @@
           indexAxis: 'y', maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Annual Carbon Emissions (tonnes)', font: { size: 17, weight: 'bold' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Annual Carbon Emissions (tonnes)', font: { size: 19, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
             x: { beginAtZero: true, grid: { color: GRID }, border: { color: AXIS } },
@@ -472,7 +508,7 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Energy Bill (¥)', font: { size: 17, weight: 'bold' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Energy Bill (¥)', font: { size: 19, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
             x: { grid: { display: false }, border: { color: AXIS } },
@@ -493,7 +529,7 @@
           indexAxis: 'y', maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Lifecycle Cost (¥)', font: { size: 17, weight: 'bold' }, padding: { bottom: 10 } }
+            title: { display: true, text: 'Lifecycle Cost (¥)', font: { size: 19, weight: 'bold' }, padding: { bottom: 10 } }
           },
           scales: {
             x: { beginAtZero: true, grid: { color: GRID }, border: { color: AXIS },
@@ -513,11 +549,11 @@
         options: {
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: true, position: 'right' },
-            title: { display: true, text: 'Total Building Energy Demand (MWh)', font: { size: 17, weight: 'bold' }, padding: { bottom: 10 } }
+            legend: { display: true, position: 'right', labels: { font: { size: 16 } } },
+            title: { display: true, text: 'Total Building Energy Demand (MWh)', font: { size: 19, weight: 'bold' }, padding: { bottom: 10 } }
           }
         },
-        plugins: [pieValueLabelPlugin(v => v.toFixed(2))]
+        plugins: [pieValueLabelPlugin((v, total) => (v / total * 100).toFixed(1) + '%')]
       });
 
       const carbonReduction = (1 - b.carbonWithDER / b.carbonWithoutDER) * 100;
